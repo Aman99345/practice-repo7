@@ -1,0 +1,47 @@
+- name: Deploy and Run on EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          
+          # The entire script below runs remotely on your EC2 instance
+          script: |
+            # 1. Install Python 3 (Handles common Linux distributions)
+            # This block attempts to install Python using 'apt' (Ubuntu) or 'yum' (Amazon Linux/RHEL).
+            echo "--- Checking for Python installation... ---"
+            
+            # Use 'which' to check if python3 exists
+            if ! command -v python3 &> /dev/null
+            then
+                echo "Python3 not found. Installing..."
+                
+                # Check for package manager: apt (Ubuntu/Debian)
+                if command -v apt &> /dev/null
+                then
+                    sudo apt update
+                    sudo apt install -y python3
+                # Check for package manager: yum (Amazon Linux/RHEL/CentOS)
+                elif command -v yum &> /dev/null
+                then
+                    sudo yum install -y python3
+                else
+                    echo "Error: Cannot find apt or yum. Python installation failed."
+                    exit 1 # Fail the job if we can't install Python
+                fi
+                echo "Python3 installed successfully."
+            else
+                echo "Python3 is already installed."
+            fi
+            
+            # 2. Define the deployment directory and file name (Assuming 'NAme.py' is transferred by the action)
+            FILE_NAME="NAme.py"
+            
+            # 3. Execute the Python script
+            echo "--- Starting Python Script Execution ---"
+            
+            # The script is executed from the SSH user's home directory after transfer
+            python3 $FILE_NAME
+            
+            echo "--- Script Execution Complete ---"
